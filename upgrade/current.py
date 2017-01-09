@@ -192,6 +192,10 @@ def run(session, logger):
         WHERE sale_order.id = sale_order_line.order_id
         AND sale_order.partner_id != sale_order_line.order_partner_id""")
 
+    # DELETE the decimal precision Product Price that can be added by oca module
+    # and conflict with the new odoo version
+    session.cr.execute("DELETE FROM decimal_precision WHERE name ='Product Price'")
+
     logger.info("Begin of odoo modules update")
     session.cr.commit()
     session.update_modules(['all'])
