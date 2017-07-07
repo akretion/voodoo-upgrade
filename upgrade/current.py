@@ -196,6 +196,26 @@ def run(session, logger):
     # and conflict with the new odoo version
     session.cr.execute("DELETE FROM decimal_precision WHERE name ='Product Price'")
 
+    # CREATE ir_model_data for new countries if they have been manually created
+    country_code = {'ET': 'et'}
+    for code, name in country_code.iteritems():
+        session.cr.execute("SELECT id from res_country WHERE code = %s", (code,))
+        country_id = session.cr.fetchall()
+        session.cr.execute("""
+            SELECT id
+            FROM ir_model_data WHERE name = %s and model = 'res.country'
+        """, (name,))
+        model_data = session.cr.fetchall()
+
+        if country_id and not model_data:
+            logger.info(
+                "Create ir model data for country already created : %s" % code)
+            session.cr.execute(
+                """INSERT INTO ir_model_data (noupdate, name, module, model, res_id)
+                   VALUES (true, %s, 'base', 'res.country',
+                            (SELECT id FROM res_country WHERE code = %s))
+                """, (name, code))
+
     logger.info("Begin of odoo modules update")
     session.cr.commit()
     session.update_modules(['all'])
